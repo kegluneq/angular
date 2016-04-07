@@ -50,6 +50,11 @@ class Rewriter {
     var visitor = new _RewriterVisitor(this);
 
     node.accept(visitor);
+    if (!visitor.modifiedCode) return null;
+    if (!visitor._importAdded) {
+      log.error('No imports found in modified library, which is unsupported. '
+          'Are you calling `bootstrap` from inside a `part` file?');
+    }
 
     return visitor.outputRewrittenCode();
   }
@@ -63,15 +68,36 @@ class Rewriter {
 class _RewriterVisitor extends Object with RecursiveAstVisitor<Object> {
   final Rewriter _rewriter;
   final buf = new StringBuffer();
+
+  /// Any assignment expressions which have `new ReflectionCapabilities` on the
+  /// right hand side.
+  ///
+  /// These are all rewritten.
   final reflectionCapabilityAssignments = <AssignmentExpression>[];
 
   int _currentIndex = 0;
+
+  bool _rewroteReflectionCapabilitiesImport = false;
+
+  /// Whether a call to `initReflector` was inserted into the code.
   bool _setupAdded = false;
+
+  /// Whether the import to generated code was added.
+  ///
+  /// We eagerly add the import when processing the input file's imports,
+  /// so this being `true` does not guarantee that the code's behavior was
+  /// actually modified.
   bool _importAdded = false;
 
   /// Whether we imported static bootstrap by e.g. rewriting a non-static
   /// bootstrap import.
   bool _hasStaticBootstrapImport = false;
+
+  bool get modifiedCode =>
+      reflectionCapabilityAssignments.isNotEmpty ||
+      _rewroteReflectionCapabilitiesImport ||
+      _setupAdded ||
+      _hasStaticBootstrapImport;
 
   _RewriterVisitor(this._rewriter);
 
@@ -279,6 +305,7 @@ class _RewriterVisitor extends Object with RecursiveAstVisitor<Object> {
       buf.write(_commentedNode(node));
     }
     _currentIndex = node.end;
+    _rewroteReflectionCapabilitiesImport = true;
   }
 
   _rewriteReflectionCapabilitiesAssignment(AssignmentExpression assignNode) {

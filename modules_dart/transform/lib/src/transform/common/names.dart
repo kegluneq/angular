@@ -10,6 +10,7 @@ const DEFERRED_EXTENSION = '.dart.deferredCount';
 const SHIMMED_STYLESHEET_EXTENSION = '.css.shim.dart';
 const NON_SHIMMED_STYLESHEET_EXTENSION = '.css.dart';
 const META_EXTENSION = '.ng_meta.json';
+const MODIFIED_EXTENSION = '.modified';
 const REFLECTION_CAPABILITIES_NAME = 'ReflectionCapabilities';
 const REFLECTOR_IMPORT = 'package:angular2/src/core/reflection/reflection.dart';
 const REFLECTOR_PREFIX = '_ngRef';

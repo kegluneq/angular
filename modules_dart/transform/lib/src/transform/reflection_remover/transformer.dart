@@ -9,6 +9,7 @@ import 'package:angular2/src/transform/common/mirror_mode.dart';
 import 'package:angular2/src/transform/common/names.dart';
 import 'package:angular2/src/transform/common/options.dart';
 import 'package:angular2/src/transform/common/options_reader.dart';
+import 'package:angular2/src/transform/common/rewrite_utils.dart';
 import 'package:angular2/src/transform/common/zone.dart' as zone;
 
 import 'remove_reflection_capabilities.dart';
@@ -57,13 +58,14 @@ class ReflectionRemover extends Transformer implements LazyTransformer {
             asset: primaryId);
       }
 
-      var transformedCode = await removeReflectionCapabilities(
+      final rewriteResult = await removeReflectionCapabilities(
           new AssetReader.fromTransform(transform),
           primaryId,
           options.annotationMatcher,
           mirrorMode: mirrorMode,
           writeStaticInit: writeStaticInit);
-      transform.addOutput(new Asset.fromString(primaryId, transformedCode));
+      maybeAddModifiedOutput(transform, rewriteResult);
+      transform.addOutput(new Asset.fromString(primaryId, rewriteResult.code));
     }, log: transform.logger);
   }
 }

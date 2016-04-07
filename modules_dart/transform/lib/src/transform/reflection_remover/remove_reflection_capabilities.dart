@@ -7,6 +7,7 @@ import 'package:barback/barback.dart';
 import 'package:angular2/src/transform/common/annotation_matcher.dart';
 import 'package:angular2/src/transform/common/asset_reader.dart';
 import 'package:angular2/src/transform/common/mirror_mode.dart';
+import 'package:angular2/src/transform/common/rewrite_utils.dart';
 
 import 'codegen.dart';
 import 'entrypoint_matcher.dart';
@@ -25,8 +26,11 @@ Future<String> removeReflectionCapabilities(AssetReader reader,
   var code = await reader.readAsString(reflectionEntryPoint);
 
   var codegen = new Codegen(reflectionEntryPoint);
-  return new Rewriter(code, codegen,
+  final rewrittenCode = new Rewriter(code, codegen,
           new EntrypointMatcher(reflectionEntryPoint, annotationMatcher),
           mirrorMode: mirrorMode, writeStaticInit: writeStaticInit)
       .rewrite(parseCompilationUnit(code, name: reflectionEntryPoint.path));
+  final isModified = rewrittenCode != null;
+  return new RewriteResult(
+      reflectionEntryPoint, isModified ? rewrittenCode : code, isModified);
 }
