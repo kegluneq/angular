@@ -40,6 +40,7 @@ class ReflectionRemover extends Transformer implements LazyTransformer {
   @override
   declareOutputs(DeclaringTransform transform) {
     transform.declareOutput(transform.primaryId);
+    declareOutput(transform);
   }
 
   @override

@@ -6,6 +6,7 @@ import 'package:barback/barback.dart';
 
 import 'package:angular2/src/transform/common/options.dart';
 import 'package:angular2/src/transform/common/options_reader.dart';
+import 'package:angular2/src/transform/common/rewrite_utils.dart';
 import 'package:angular2/src/transform/reflection_remover/transformer.dart'
     as base show ReflectionRemover;
 
@@ -14,18 +15,8 @@ import 'package:angular2/src/transform/reflection_remover/transformer.dart'
 // If the number of primary inputs is >> transformed files, output an error
 // telling the user to use $include or $exclude in their pubspec.
 
-/// Removes the transitive dart:mirrors import from Angular 2 entrypoints.
-///
-/// This transformer can be used along with others as a faster alternative to
-/// the single angular2 transformer.
-///
-/// See [the wiki][] for details.
-///
-/// [the wiki]: https://github.com/angular/angular/wiki/Angular-2-Dart-Transformer
-class ReflectionRemover extends Transformer implements DeclaringTransformer {
-  final base.ReflectionRemover _impl;
-
-  ReflectionRemover._(this._impl);
+class ReflectionRemover extends TransformerGroup {
+  ReflectionRemover._(phases) : super(phases);
 
   /// Ctor which tells pub that this can be run as a standalone transformer.
   factory ReflectionRemover.asPlugin(BarbackSettings settings) {
@@ -41,8 +32,31 @@ class ReflectionRemover extends Transformer implements DeclaringTransformer {
           r"$include and $exclude parameters to filter which files are "
           "processed.");
     }
-    return new ReflectionRemover._(new base.ReflectionRemover(options));
+
+    final phases = [
+      [new _ReflectionRemoverPhase(new base.ReflectionRemover(options))]
+    ];
+    if (options.modeName == BarbackMode.DEBUG.name) {
+      phases.add([new FailIfUnmodifiedTransformer('reflection_remover')]);
+    }
+
+    return new ReflectionRemover._(phases);
   }
+}
+
+/// Removes the transitive dart:mirrors import from Angular 2 entrypoints.
+///
+/// This transformer can be used along with others as a faster alternative to
+/// the single angular2 transformer.
+///
+/// See [the wiki][] for details.
+///
+/// [the wiki]: https://github.com/angular/angular/wiki/Angular-2-Dart-Transformer
+class _ReflectionRemoverPhase extends Transformer
+    implements DeclaringTransformer {
+  final base.ReflectionRemover _impl;
+
+  _ReflectionRemoverPhase(this._impl);
 
   /// Signal that we process all .dart files.
   ///
